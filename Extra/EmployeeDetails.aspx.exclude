@@ -1,0 +1,222 @@
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/MasterPage.master" AutoEventWireup="true"
+    CodeFile="EmployeeDetails.aspx.cs" Inherits="EmployeeDetails" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="Server">
+    <script type="text/javascript">
+        $(function () {
+            get_department_details();
+        });
+        function callHandler(d, s, e) {
+            $.ajax({
+                url: 'DairyFleet.axd',
+                data: d,
+                type: 'GET',
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                async: true,
+                cache: true,
+                success: s,
+                Error: e
+            });
+        }
+        function save_Employee_Details() {
+            var name = document.getElementById('txt_ename').value;
+            if (name == "") {
+                alert("Enter Employee Name ");
+                return false;
+
+            }
+            var DepartmentCode = document.getElementById('ddlcode').value;
+            if (DepartmentCode == "") {
+                alert("Select deptid ");
+                return false;
+
+            }
+            var username = document.getElementById('txt_uname').value;
+            if (username == "") {
+                alert("Enter username ");
+                return false;
+
+            }
+            var passward = document.getElementById('txt_pwd').value;
+
+            if (passward == "") {
+                alert("Enter Password ");
+                return false;
+
+            }
+            var sno = document.getElementById('lbl_sno').value;
+            var btnval = document.getElementById('btn_save').value;
+            var data = { 'op': 'save_Employee_Details', 'name': name, 'DepartmentCode': DepartmentCode, 'username': username, 'passward': passward, 'btnVal': btnval, 'sno': sno };
+            var s = function (msg) {
+                if (msg) {
+                    if (msg.length > 0) {
+                        alert(msg);
+                        $('#div_EmpData').show();
+                        $('#fillform').show();
+                        clear_Emp_Details();
+                    }
+                }
+                else {
+                }
+            };
+            var e = function (x, h, e) {
+            };
+
+            $(document).ajaxStart($.blockUI).ajaxStop($.unblockUI);
+            callHandler(data, s, e);
+        }
+        function clear_Emp_Details() {
+            document.getElementById('txt_ename').value = "";
+            document.getElementById('ddlcode').value = "";
+            document.getElementById('txt_uname').value = "";
+            document.getElementById('txt_pwd').value = "";
+        }
+
+        function get_department_details() {
+            var data = { 'op': 'get_department_details' };
+            var s = function (msg) {
+                if (msg) {
+                    if (msg.length > 0) {
+                        filldepartmentdetails(msg);
+                    }
+                }
+                else {
+                }
+            };
+            var e = function (x, h, e) {
+            };
+            $(document).ajaxStart($.blockUI).ajaxStop($.unblockUI);
+            callHandler(data, s, e);
+        }
+
+        function filldepartmentdetails(msg) {
+            var data = document.getElementById('ddlcode');
+            var length = data.options.length;
+            document.getElementById('ddlcode').options.length = null;
+            var opt = document.getElementById('option');
+            opt.innerHTML = "Select DepartmentCode";
+            opt.value = "Select DepartmentCode";
+            opt.setAttribute = ("Selected", "Selected");
+            opt.setAttribute = ("disabled", "disabled");
+            opt.setAttribute = ("class", "displaynone");
+            data.appendChild(opt);
+            for (var i = 0; i < msg.length; i++) {
+                if (msg[i].DepartmentCode != null) {
+                    var option = document.getElementByID('option');
+                    option.innerHTML = msg[i].DepartmentCode;
+                    option.value = msg[i].sno;
+                    data.appendChild(option);
+                }
+            }
+        }
+        function get_department_details() {
+            var data = { 'op': 'get_department_details' };
+            var s = function (msg) {
+                if (msg) {
+                    if (msg.length > 0) {
+                        //filldeptdetail(msg);
+
+                    }
+                }
+                else {
+                }
+            };
+            var e = function (x, h, e) {
+            };
+            $(document).ajaxStart($.blockUI).ajaxStop($.unblockUI);
+            callHandler(data, s, e);
+        }
+    </script>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
+    <section class="content-header">
+        <h1>
+            Employee Details
+        </h1>
+        <ol class="breadcrumb">
+            <li><a href="#"><i class="fa fa-dashboard"></i>Operation</a></li>
+            <li><a href="#">Employee Details</a></li>
+        </ol>
+    </section>
+    <section>
+        <section class="content">
+            <div class="box box-info">
+                <div id="div_Account">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">
+                            <i style="padding-right: 5px;" class="fa fa-cog"></i>Employee Details
+                        </h3>
+                    </div>
+                    <div class="box-body">
+                        <div id="div_EmpData">
+                        </div>
+                        <div id='fillform'>
+                            <table align="center" style="width: 60%;">
+                                <tr>
+                                    <th>
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <td style="height: 40px;">
+                                        <label>
+                                            Name</label>
+                                    </td>
+                                    <td style="height: 40px;">
+                                        <input id="txt_ename" type="text" maxlength="45" class="form-control" placeholder="Enter Employeename" /><label
+                                            id="Label1" class="errormessage">* Please Enter Employee name</label>
+                                    </td>
+                                    <td>
+                                    </td>
+                                </tr>
+                                <td style="height: 40px;">
+                                    <label>
+                                        DepartmentCode</label>
+                                </td>
+                                <td>
+                                    <select id="ddlcode" class="form-control">
+                                    </select>
+                                </td>
+                                <td>
+                                </td>
+                                </tr>
+                                <tr>
+                                    <td style="height: 40px;">
+                                        <label>
+                                            Username</label>
+                                    </td>
+                                    <td>
+                                        <input id="txt_uname" class="form-control" type="text" name="Username"><br>
+                                    </td>
+                                    <td>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="height: 40px;">
+                                        <label>
+                                            Password</label>
+                                    </td>
+                                    <td style="height: 40px;">
+                                        <input id="txt_pwd" type="text" maxlength="45" class="form-control" placeholder="Enter Password" /><label
+                                            id="lbl_code_error_msg" class="errormessage">* Please Enter Password</label>
+                                    </td>
+                                    <td>
+                                    </td>
+                                </tr>
+                                <td style="height: 40px;">
+                                    <input id="btn_save" type="button" class="btn btn-primary" name="submit" value="Save"
+                                        onclick="save_Employee_Details();">
+                                    <input id="btn_close" type="button" class="btn btn-danger" name="submit" value="Cancel"
+                                        onclick="clear_Emp_Details();">
+                                </td>
+                                </tr>
+                                <tr hidden>
+                                    <td>
+                                        <label id="lbl_sno">
+                                        </label>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+        </section>
+</asp:Content>

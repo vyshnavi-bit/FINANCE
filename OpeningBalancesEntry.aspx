@@ -1,0 +1,630 @@
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/MasterPage.master" AutoEventWireup="true"
+ CodeFile="OpeningBalancesEntry.aspx.cs" Inherits="OpeningBalancesEntry" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="head" Runat="Server">
+<link href="autocomplete/jquery-ui.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript">
+        $(function () {
+            get_Branch_details();
+            get_financial_year();
+            GetFixedrows();
+            get_openingbalance_entry();
+            forclearall();
+            $('#add_Inward').click(function () {
+                $('#vehmaster_fillform').css('display', 'block');
+                $('#showlogs').css('display', 'none');
+                $('#div_inwardtable').hide();
+                GetFixedrows();
+                get_Branch_details();
+                get_financial_year();
+                get_bankaccount_details();
+                get_party_type1_details();
+                get_openingbalance_entry();
+                forclearall();
+            });
+            $('#close_id').click(function () {
+                $('#vehmaster_fillform').css('display', 'none');
+                $('#showlogs').css('display', 'block');
+                $('#div_inwardtable').show();
+                get_openingbalance_entry();
+                forclearall();
+            });
+        });
+        function callHandler(d, s, e) {
+            $.ajax({
+                url: 'DairyFleet.axd',
+                data: d,
+                type: 'GET',
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                async: true,
+                cache: true,
+                success: s,
+                Error: e
+            });
+        }
+        function CallHandlerUsingJson(d, s, e) {
+            d = JSON.stringify(d);
+            d = encodeURIComponent(d);
+            $.ajax({
+                type: "GET",
+                url: " DairyFleet.axd?json=",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                data: d,
+                async: true,
+                cache: true,
+                success: s,
+                error: e
+            });
+        }
+        function canceldetails() {
+            $("#div_CategoryData").show();
+            $("#fillform").hide();
+            $('#showlogs').show();
+            forclearall();
+        }
+        var branchnamearr = [];
+        function get_Branch_details() {
+            var data = { 'op': 'get_Branch_details' };
+            var s = function (msg) {
+                if (msg) {
+                    branchnamearr = msg;
+                    var empnameList = [];
+                    for (var i = 0; i < msg.length; i++) {
+                        var empname = msg[i].branchname;
+                        empnameList.push(empname);
+                    }
+                    $('#txt_branchcode').autocomplete({
+                        source: empnameList,
+                        change: Getbranchcode,
+                        autoFocus: true
+                    });
+                }
+            }
+            var e = function (x, h, e) {
+                alert(e.toString());
+            };
+            callHandler(data, s, e);
+        }
+        function Getbranchcode() {
+            var empname = document.getElementById('txt_branchcode').value;
+            for (var i = 0; i < branchnamearr.length; i++) {
+                if (empname == branchnamearr[i].branchname) {
+                    document.getElementById('txt_branchname').value = branchnamearr[i].code;
+                    document.getElementById('txt_branchcode_sno').value = branchnamearr[i].branchid;
+                }
+            }
+        }
+
+        function get_financial_year() {
+            var data = { 'op': 'get_financial_year' };
+            var s = function (msg) {
+                if (msg) {
+                    if (msg.length > 0) {
+                        fillledger(msg);
+                    }
+                }
+                else {
+                }
+            };
+            var e = function (x, h, e) {
+            };
+            $(document).ajaxStart($.blockUI).ajaxStop($.unblockUI);
+            callHandler(data, s, e);
+        }
+        function fillledger(msg) {
+            var data = document.getElementById('txt_financeyear');
+            var length = data.options.length;
+            document.getElementById('txt_financeyear').options.length = null;
+            var opt = document.createElement('option');
+            opt.innerHTML = "Select Financial Year";
+            opt.value = "Select Financial Year";
+            opt.setAttribute("selected", "selected");
+            opt.setAttribute("disabled", "disabled");
+            opt.setAttribute("class", "dispalynone");
+            data.appendChild(opt);
+            for (var i = 0; i < msg.length; i++) {
+                if (msg[i].year != null) {
+                    var option = document.createElement('option');
+                    option.innerHTML = msg[i].year;
+                    option.value = msg[i].sno;
+                    data.appendChild(option);
+                }
+            }
+        }
+        var accountNumber = [];
+        function get_bankaccount_details() {
+            var data = { 'op': 'get_bankaccount_details' };
+            var s = function (msg) {
+                if (msg) {
+                    if (msg.length > 0) {
+                        filldetails1(msg);
+                        accountNumber = msg;
+                    }
+                    else {
+                    }
+                }
+                else {
+                }
+            };
+            var e = function (x, h, e) {
+            }; $(document).ajaxStart($.blockUI).ajaxStop($.unblockUI);
+            callHandler(data, s, e);
+        }
+        function filldetails1(msg) {
+            var compiledList = [];
+            for (var i = 0; i < msg.length; i++) {
+                var AccountNumber = msg[i].AccountNumber;
+                compiledList.push(AccountNumber);
+            }
+
+            $('.clscode1').autocomplete({
+                source: compiledList,
+                change: calTotal1,
+                autoFocus: true
+            });
+        }
+        var emptytable = [];
+        function calTotal1() {
+            var AccountNumber = $(this).val();
+            var checkflag = true;
+            if (emptytable.indexOf(AccountNumber) == -1) {
+                for (var i = 0; i < accountNumber.length; i++) {
+                    if (AccountNumber == accountNumber[i].AccountNumber) {
+                        $(this).closest('tr').find('#txt_accountcode_sno').val(accountNumber[i].sno);
+                        $(this).closest('tr').find('#txt_description').val(accountNumber[i].Accounttype);
+                        emptytable.push(AccountNumber);
+                    }
+                }
+            }
+            else {
+                //alert("already added");
+                //var empt = "";
+                //$(this).val(empt);
+                //$(this).focus();
+                //return false;
+            }
+        }
+        var short_desc = [];
+        function get_party_type1_details() {
+            var data = { 'op': 'get_party_type1_details' };
+            var s = function (msg) {
+                if (msg) {
+                    if (msg.length > 0) {
+                        fillparty(msg);
+                        short_desc = msg;
+                    }
+                    else {
+                    }
+                }
+                else {
+                }
+            };
+            var e = function (x, h, e) {
+            }; $(document).ajaxStart($.blockUI).ajaxStop($.unblockUI);
+            callHandler(data, s, e);
+        }
+        function fillparty(msg) {
+            var compiledList = [];
+            for (var i = 0; i < msg.length; i++) {
+                var party_tp = msg[i].party_tp;
+                compiledList.push(party_tp);
+            }
+
+            $('.clscode2').autocomplete({
+                source: compiledList,
+                change: calTotal2,
+                autoFocus: true
+            });
+        }
+        var emptytable1 = [];
+        function calTotal2() {
+            var party_tp = $(this).val();
+            var checkflag = true;
+            if (emptytable1.indexOf(party_tp) == -1) {
+                for (var i = 0; i < short_desc.length; i++) {
+                    if (party_tp == short_desc[i].party_tp) {
+                        $(this).closest('tr').find('#txt_partycode_sno').val(short_desc[i].sno);
+                        $(this).closest('tr').find('#txt_partyname').val(short_desc[i].short_desc);
+                        emptytable1.push(party_tp);
+                    }
+                }
+            }
+            else {
+                //alert("already added");
+                //var empt = "";
+                //$(this).val(empt);
+                //$(this).focus();
+                //return false;
+            }
+        }
+
+        $(document).click(function () {
+            $('#tabledetails').on('change', '.clscode1', calTotal1)
+            $('#tabledetails').on('change', '.clscode2', calTotal2)
+        });
+        function GetFixedrows() {
+            var results = '<div  style="overflow:auto;"><table class="table table-bordered table-hover dataTable no-footer" role="grid" aria-describedby="example2_info" ID="tabledetails">';
+            results += '<thead><tr><th scope="col">Sno</th><th scope="col">Account Code</th><th scope="col">Description</th><th scope="col">Party Code</th><th scope="col">Party Name</th><th scope="col">Dr Amount</th><th scope="col">Cr Amount</th></tr></thead></tbody>';
+            for (var i = 1; i < 10; i++) {
+                results += '<tr><td scope="row" class="1" style="text-align:center;" id="txtsno">' + i + '</td>';
+                results += '<td ><input id="txt_accountcode" type="text" class="clscode1" placeholder= "Account Code"  style="width:150px;"  /></td>';
+                results += '<td style="display:none"><input id="txt_accountcode_sno" type="text" class="clscodesno"  /></td>';
+                results += '<td ><input id="txt_description" type="text" class="clsDescription" placeholder= "Description" style="width:150px;"/></td>';
+                results += '<td ><input id="txt_partycode" type="text"  placeholder= "Party code" class="clscode2"  style="width:150px;"/></td>';
+                results += '<td style="display:none"><input id="txt_partycode_sno" type="text" class="clscodepartysno"  /></td>';
+                results += '<td ><input id="txt_partyname" type="text" class="clsDescription" placeholder= "Party Name" style="width:150px;"/></td>';
+                results += '<td ><input id="txt_drammount" type="text" name="drammount" onkeypress="return isNumber(event)"  class="drammount" placeholder= "Dr Amount" onblur="findTotal1()" style="width:150px;"/></td>';
+                results += '<td ><input id="txt_crammount" type="text" name="crammount" onkeypress="return isNumber(event)"  class="crammount" placeholder= "Cr Amount" onblur="findTotal2()"   style="width:150px;"/></td>';
+                results += '<td data-title="Remove"><span><input type="button" value="Remove"  onclick="removerow(this)" style="cursor:pointer"/></span></td>';
+                //results += '<td style="display:none" ><input id="txt_sno" type="text" placeholder= "Sno" style="width:90px;"/></td>';
+                results += '<td style="display:none"><input id="hdnproductsno" type="hidden" /></td></tr>';
+            }
+            results += '</table></div>';
+            $("#div_SectionData").html(results);
+        }
+        var DataTable;
+        function insertrow() {
+            DataTable = [];
+            get_bankaccount_details();
+            get_party_type1_details();
+            var txtsno = 0;
+            accountcode = 0;
+            description = 0;
+            partycode = 0;
+            partyname = 0;
+            drammount = 0;
+            crammount = 0;
+            var hdnproductsno = 0;
+            var rows = $("#tabledetails tr:gt(0)");
+            var rowsno = 1;
+            $(rows).each(function (i, obj) {
+                txtsno = rowsno;
+                accountcode = $(this).find('#txt_accountcode').val();
+                description = $(this).find('#txt_description').val();
+                partycode = $(this).find('#txt_partycode').val();
+                partyname = $(this).find('#txt_partyname').val();
+                drammount = $(this).find('#txt_drammount').val();
+                crammount = $(this).find('#txt_crammount').val();
+                hdnproductsno = $(this).find('#hdnproductsno').val();
+                DataTable.push({ Sno: txtsno, accountcode: accountcode, description: description, partycode: partycode, partyname: partyname, drammount: drammount, crammount: crammount, hdnproductsno: hdnproductsno });
+                rowsno++;
+            });
+            accountcode = 0;
+            description = 0;
+            partycode = 0;
+            partyname = 0;
+            drammount = 0;
+            crammount = 0;
+            var Sno = parseInt(txtsno) + 1;
+            DataTable.push({ Sno: Sno, accountcode: accountcode, description: description, partycode: partycode, partyname: partyname, drammount: drammount, crammount: crammount, hdnproductsno: hdnproductsno });
+            var results = '<div class="divcontainer" style="overflow:auto;"><table class="table table-bordered table-hover dataTable no-footer" role="grid" aria-describedby="example2_info" ID="tabledetails">';
+            results += '<thead><tr><th scope="col">Sno</th><th scope="col">Account Code</th><th scope="col">Description</th><th scope="col">Party Code</th><th scope="col">Party Name</th><th scope="col">Dr Amount</th><th scope="col">Cr Amount</th></tr></thead></tbody>';
+            for (var i = 0; i < DataTable.length; i++) {
+                results += '<tr><td scope="row" class="1" style="text-align:center;" id="txtsno">' + DataTable[i].Sno + '</td>';
+                results += '<td ><input id="txt_accountcode" type="text" class="clscode1" placeholder= "Account Code"  style="width:150px;" value="' + DataTable[i].accountcode + '" /></td>';
+                results += '<td style="display:none"><input id="txt_accountcode_sno" type="text" class="clscodesno"  /></td>';
+                results += '<td ><input id="txt_description" type="text" class="clsDescription" placeholder= "Description" style="width:150px;" value="' + DataTable[i].description + '"/></td>';
+                results += '<td ><input id="txt_partycode" type="text"  placeholder= "Party code" class="clscode2"  style="width:150px;" value="' + DataTable[i].partycode + '"/></td>';
+                results += '<td style="display:none"><input id="txt_partycode_sno" type="text" class="clscodepartysno"  /></td>';
+                results += '<td ><input id="txt_partyname" type="text" class="clsDescription" placeholder= "Party Name" style="width:150px;" value="' + DataTable[i].partyname + '" /></td>';
+                results += '<td ><input id="txt_drammount" type="text" name="drammount" onkeypress="return isNumber(event)"  class="drammount" placeholder= "Dr Amount" onblur="findTotal1()" style="width:150px;" value="' + DataTable[i].drammount + '"/></td>';
+                results += '<td ><input id="txt_crammount" type="text" name="crammount" onkeypress="return isNumber(event)"  class="crammount" placeholder= "Cr Amount" onblur="findTotal2()"  style="width:150px;" value="' + DataTable[i].crammount + '"/></td>';
+                results += '<td data-title="Remove"><span><input type="button" value="Remove"  onclick="removerow(this)" style="cursor:pointer"/></span></td>';
+                //results += '<td style="display:none" ><input id="txt_sno" type="text" placeholder= "Sno" style="width:90px;" value="' + DataTable[i].sno + '"/></td>';
+                results += '<td style="display:none"><input id="hdnproductsno" type="hidden" value="' + DataTable[i].hdnproductsno + '" /></td>';
+                results += '<td style="display:none" class="4">' + i + '</td></tr>';
+            }
+            results += '</table></div>';
+            $("#div_SectionData").html(results);
+        }
+        var DataTable;
+        function removerow(thisid) {
+            $(thisid).parents('tr').remove();
+        }
+        var replaceHtmlEntites = (function () {
+            return function (s) {
+                return (s.replace(translate_re, function (match, entity) {
+                    return translate[entity];
+                }));
+            }
+        })();
+        function save_openingbalance_entry() {
+            var branchcode = document.getElementById('txt_branchcode_sno').value;
+            if (branchcode == "") {
+                alert("Enter  branch code");
+                return false;
+            }
+            var financeyear = document.getElementById('txt_financeyear').value;
+            if (financeyear == "") {
+                alert("Enter  finance year");
+                return false;
+            }
+            var btnval = document.getElementById('btn_save').value;
+            var openingbalance_array = [];
+            $('#tabledetails> tbody > tr').each(function () {
+                var txtsno = $(this).find('#txtsno').text();
+                var accountcode = $(this).find('#txt_accountcode_sno').val();
+                var description = $(this).find('#txt_description').val();
+                var partycode = $(this).find('#txt_partycode_sno').val();
+                var partyname = $(this).find('#txt_partyname').val();
+                var drammount = $(this).find('#txt_drammount').val();
+                var crammount = $(this).find('#txt_crammount').val();
+                var hdnproductsno = $(this).find('#hdnproductsno').val();
+                if (drammount == "" || drammount == "0") {
+                }
+                else {
+                    openingbalance_array.push({ 'accountcode': accountcode, 'description': description, 'partycode': partycode, 'partyname': partyname, 'drammount': drammount, 'crammount': crammount, 'hdnproductsno': hdnproductsno
+                    });
+                }
+            });
+            var data = { 'op': 'save_openingbalance_entry', 'branchcode': branchcode, 'financeyear': financeyear, 'openingbalance_array': openingbalance_array, 'btnval': btnval };
+            var s = function (msg) {
+                if (msg) {
+                    alert(msg);
+                    forclearall();
+                    get_openingbalance_entry();
+                    $('#vehmaster_fillform').css('display', 'none');
+                    $('#showlogs').css('display', 'block');
+                    $('#div_inwardtable').show();
+                }
+            };
+            var e = function (x, h, e) {
+            };
+            CallHandlerUsingJson(data, s, e);
+        }
+        function forclearall() {
+            document.getElementById('txt_branchcode').value = "";
+            document.getElementById('txt_branchname').value = "";
+            document.getElementById('txt_financeyear').selectedIndex = 0;
+            document.getElementById('txt_accountcode').value = "";
+            document.getElementById('txt_description').value = "";
+            document.getElementById('txt_partycode').value = "";
+            document.getElementById('txt_partyname').value = "";
+            document.getElementById('txt_drammount').value = "";
+            document.getElementById('txt_crammount').value = "";
+            document.getElementById('total1').value = "";
+            document.getElementById('total2').value = "";
+            document.getElementById('btn_save').value = "Save";
+            GetFixedrows();
+            get_bankaccount_details();
+            get_party_type1_details();
+        }
+        function isNumber(evt) {
+            var charCode = (evt.which) ? evt.which : evt.keyCode;
+            if (charCode != 46 && charCode > 31
+            && (charCode < 48 || charCode > 57)) {
+                return false;
+            }
+            return true;
+        }
+        var partytds = [];
+        function get_openingbalance_entry() {
+            var data = { 'op': 'get_openingbalance_entry' };
+            var s = function (msg) {
+                if (msg) {
+                    if (msg.length > 0) {
+                        fillopeningbalance_details(msg);
+                    }
+                }
+                else {
+                }
+            };
+            var e = function (x, h, e) {
+            };
+            $(document).ajaxStart($.blockUI).ajaxStop($.unblockUI);
+            callHandler(data, s, e);
+            get_bankaccount_details();
+            get_party_type1_details();
+        }
+        var tdssub = [];
+        function fillopeningbalance_details(msg) {
+            var results = '<div  style="overflow:auto;"><table class="table table-bordered table-hover dataTable no-footer" role="grid" aria-describedby="example2_info">';
+            results += '<thead><tr><th scope="col"></th><th scope="col">BranchCode</th><th scope="col">BranchName</th><th scope="col">FinancialYear</th><th scope="col">Dr Ammount</th><th scope="col">Cr Ammount</th><th scope="col">DateOfEntry</th></tr></thead></tbody>';
+            var tds = msg[0].openingbalance;
+            tdssub = msg[0].openingbalancesub;
+            var l = 0;
+            var COLOR = ["#b3ffe6", "AntiqueWhite", "#daffff", "MistyRose", "Bisque"];
+            for (var i = 0; i < tds.length; i++) {
+                results += '<tr style="background-color:' + COLOR[l] + '"><td><input id="btn_poplate" type="button"  onclick="getopeningbalancedetails(this)" name="Edit" class="btn btn-primary" value="Edit" /></td>';
+                results += '<td data-title="groupcode" style="display:none;"  class="1" >' + tds[i].branchcode + '</td>';
+                results += '<td data-title="partytype"  class="2">' + tds[i].branchid + '</td>';
+                results += '<td data-title="partytype"  class="3">' + tds[i].branchname + '</td>';
+                results += '<td data-title="partytype" style="display:none;" class="4">' + tds[i].financeyear + '</td>';
+                results += '<td data-title="certificateno"  class="5">' + tds[i].year + '</td>';
+                results += '<td data-title="certificateno"  class="6">' + tds[i].drammount + '</td>';
+                results += '<td data-title="certificateno"  class="7">' + tds[i].crammount + '</td>';
+                results += '<td data-title="certificateno"  class="8">' + tds[i].doe + '</td>';
+                results += '<td data-title="doe" style="display:none;"  class="9">' + tds[i].sno + '</td></tr>';
+            }
+            results += '</table></div>';
+            $("#div_inwardtable").html(results);
+        }
+        function getopeningbalancedetails(thisid) {
+
+            $('#vehmaster_fillform').css('display', 'block');
+            $('#showlogs').css('display', 'none');
+            $('#div_Grid').hide();
+            $('#div_SectionData').show();
+            $('#div_inwardtable').hide();
+            $('#newrow').show();
+            var branchcode = $(thisid).parent().parent().children('.1').html();
+            var branchid = $(thisid).parent().parent().children('.2').html();
+            var branchname = $(thisid).parent().parent().children('.3').html();
+            var financeyear = $(thisid).parent().parent().children('.4').html();
+            var year = $(thisid).parent().parent().children('.5').html();
+            var drammount = $(thisid).parent().parent().children('.6').html();
+            var crammount = $(thisid).parent().parent().children('.7').html();
+            var doe = $(thisid).parent().parent().children('.8').html();
+            var sno = $(thisid).parent().parent().children('.9').html();
+
+            document.getElementById('txt_branchcode_sno').value = branchcode;
+            document.getElementById('txt_branchcode').value = branchname;
+            document.getElementById('txt_branchname').value = branchid;
+            document.getElementById('txt_financeyear').value = financeyear;
+            document.getElementById('btn_save').value = "Modify";
+            var table = document.getElementById("tabledetails");
+            var results = '<div  style="overflow:auto;"><table class="table table-bordered table-hover dataTable no-footer" role="grid" aria-describedby="example2_info" ID="tabledetails">';
+            results += '<thead><tr><th scope="col">Sno</th><th scope="col">Account Code</th><th scope="col">Description</th><th scope="col">Party Code</th><th scope="col">Party Name</th><th scope="col">Dr Amount</th><th scope="col">Cr Amount</th></tr></thead></tbody>';
+            var k = 1;
+            for (var i = 0; i < tdssub.length; i++) {
+                if (sno == tdssub[i].sno) {
+                    results += '<tr><td data-title="Sno" class="1">' + k + '</td>';
+                    results += '<td ><input id="txt_accountcode" type="text" class="clscode1" placeholder= "Account Code"  style="width:150px;" value="' + tdssub[i].accountid + '" /></td>';
+                    results += '<td style="display:none"><input id="txt_accountcode_sno" type="text" class="clscodesno" value="' + tdssub[i].accountcode + '"  /></td>';
+                    results += '<td ><input id="txt_description" type="text" class="clsDescription" placeholder= "Description" style="width:150px;" value="' + tdssub[i].description + '"/></td>';
+                    results += '<td ><input id="txt_partycode" type="text"  placeholder= "Party code" class="clscode2"  style="width:150px;" value="' + tdssub[i].partyid + '"/></td>';
+                    results += '<td style="display:none"><input id="txt_partycode_sno" type="text" class="clscodepartysno" value="' + tdssub[i].partycode + '"  /></td>';
+                    results += '<td ><input id="txt_partyname" type="text" class="clsDescription" placeholder= "Party Name" style="width:150px;" value="' + tdssub[i].partyname + '" /></td>';
+                    results += '<td ><input id="txt_drammount" type="text" name="drammount" onkeypress="return isNumber(event)"  class="drammount" placeholder= "Dr Amount" onblur="findTotal1()" style="width:150px;" value="' + tdssub[i].drammount + '"/></td>';
+                    results += '<td ><input id="txt_crammount" type="text" name="crammount" onkeypress="return isNumber(event)"  class="crammount" placeholder= "Cr Amount"  onblur="findTotal2()"  style="width:150px;" value="' + tdssub[i].crammount + '"/></td>';
+                    results += '<td style="display:none"><input id="hdnproductsno" type="hidden" value="' + tdssub[i].sno + '" /></td>';
+                    k++;
+                }
+            }
+            results += '</table></div>';
+            $("#div_SectionData").html(results);
+            get_bankaccount_details();
+            get_party_type1_details();
+        }
+        function findTotal1() {
+            var arr = document.getElementsByName('drammount');
+            var tot = 0;
+            for (var i = 0; i < arr.length; i++) {
+                if (parseInt(arr[i].value))
+                    tot += parseInt(arr[i].value);
+            }
+            document.getElementById('total1').value = tot;
+        }
+        function findTotal2() {
+            var arr = document.getElementsByName('crammount');
+            var tot = 0;
+            for (var i = 0; i < arr.length; i++) {
+                if (parseInt(arr[i].value))
+                    tot += parseInt(arr[i].value);
+            }
+            document.getElementById('total2').value = tot;
+        }
+</script>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" Runat="Server">
+<section class="content-header">
+        <h1>
+            Opening Balances Entry<small>Preview</small>
+        </h1>
+        <ol class="breadcrumb">
+            <li><a href="#"><i class="fa fa-dashboard"></i>Transactios</a></li>
+            <li><a href="#">Opening Balances Entry</a></li>
+        </ol>
+    </section>
+    <section class="content">
+        <div class="box box-info">
+            <div class="box-header with-border">
+                <h3 class="box-title">
+                    <i style="padding-right: 5px;" class="fa fa-cog"></i>Opening Balances Entry
+                </h3>
+            </div>
+            <div class="box-body">
+                <div id="showlogs" align="center">
+                    <table>
+                        <tr>
+                           
+                            <td>
+                                <input id="add_Inward" type="button" name="submit" value='Opening Balance Entry ' class="btn btn-primary" />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div id="div_inwardtable">
+                </div>
+                <div id='vehmaster_fillform' style="display: none;">
+                    <asp:UpdatePanel ID="Up1" runat="server">
+                        <ContentTemplate>
+                            <div class="row-fluid">
+                                <div style="padding-left: 150px;">
+                                    <table id="tbl_leavemanagement" align="center">
+                                    <tr>
+                            <td>
+                                <label>
+                                    Branch Code</label>
+                            </td>
+                            <td style="height: 40px;">
+                                <%--<select id="txt_branchcode" class="form-control" onchange="Getbranchcode(this);" >
+                                </select>--%>
+                                <input id="txt_branchcode" type="text" class="form-control" placeholder="Enter Branch Name" onchange="Getbranchcode(this);" />
+                                <input id="txt_branchcode_sno" type="text" class="form-control" style="display:none" />
+                            </td>
+                            <td style="width: 5px;">
+                            </td>
+                            <td style="height: 40px;">
+                                <input id="txt_branchname" class="form-control" type="text" placeholder="Branch Code" readonly/>
+                                </td>
+                            </tr>
+                            <tr>
+                            <td>
+                                <label>
+                                    Financial year</label>
+                            </td>
+                            <td style="height: 40px;">
+                                <select id="txt_financeyear" class="form-control" >
+                                </select>
+                            </td>
+                            </tr>
+                            </table>
+                            </div>
+                                <br />
+                                <div class="box box-info">
+                                    <div class="box-header with-border">
+                                        <h3 class="box-title">
+                                            <i style="padding-right: 5px;" class="fa fa-list"></i>Opening Balance Entrys
+                                        </h3>
+                                    </div>
+                                    <div class="box-body">
+                                        <div id="div_SectionData">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <p id="newrow">
+                                    <input type="button" onclick="insertrow();" class="btn btn-default" value="Insert row" /></p>
+                                <div id="">
+                                </div>
+                                <table>
+                                    <tr>
+                                    <td>
+                                    <label>Dr Total Amount</label>
+                                    </td>
+                                    <td style="height: 40px;">
+                                    <input id="total1"  name="Amount"  style=" color: Red; font-weight: bold;" 
+                                                    readonly />
+                                    </td>
+                                    </tr>
+                                    <tr>
+                                    <td style="height: 40px;">
+                                    <label>Cr Total Amount</label>
+                                    </td>
+                                    <td>
+                                    <input id="total2"  name="Amount"  style=" color: Red; font-weight: bold;" 
+                                                    readonly />
+                                    </td>
+                                    </tr>
+                                </table>
+                                <table align="center">
+                                    <tr>
+                                        <td>
+                                            <input type="button" class="btn btn-success" id="btn_save" value="Save" onclick="save_openingbalance_entry();" />
+                                            <input type="button" class="btn btn-danger" id="close_id" value="Close" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </ContentTemplate>
+                    </asp:UpdatePanel>
+                </div>
+            </div>
+         </div>
+    </section>
+</asp:Content>
+
